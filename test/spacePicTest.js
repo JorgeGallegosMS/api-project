@@ -20,6 +20,11 @@ const picture = {
     url: 'https://media.wired.com/photos/5a593a7ff11e325008172bc2/master/w_2560%2Cc_limit/pulsar-831502910.jpg'
 }
 
+const editedPicture = {
+    name: 'Testing Space Edited',
+    url: 'https://media.wired.com/photos/5a593a7ff11e325008172bc2/master/w_2560%2Cc_limit/pulsar-831502910.jpg'
+}
+
 let newPic;
 
 describe('Testing API routes', function(){
@@ -54,14 +59,55 @@ describe('Testing API routes', function(){
         agent
             .post('/pics/new')
             .set("content-type", "application/x-www-form-urlencoded")
-            .send(picture)
+            .send({
+                name: 'Testing Space',
+                url: 'https://media.wired.com/photos/5a593a7ff11e325008172bc2/master/w_2560%2Cc_limit/pulsar-831502910.jpg'
+            })
             .end(function(err, res){
                 if(err) {
                     done(err)
                 }
                 newPic = res.body[0]
-                expect(newPic.url).to.be.equal('https://media.wired.com/photos/5a593a7ff11e325008172bc2/master/w_2560%2Cc_limit/pulsar-831502910.jpg')
+
+                expect(res.status).to.be.equal(200)
+                expect(newPic.name).to.be.equal(picture.name)
+                expect(newPic.url).to.be.equal(picture.url)
                 expect(newPic.created_by).to.be.equal(user.username)
+                done()
+            })
+    })
+
+    it('should get a single picture', function(done){
+        agent
+            .get(`/pics/${newPic._id}`)
+            .end(function(err, res){
+                if (err) {
+                    done(err)
+                }
+                const picture = res.body[0]
+
+                expect(res.status).to.be.equal(200)
+                expect(picture).to.be.an('object')
+                expect(picture._id).to.be.equal(newPic._id)
+                done()
+            })
+    })
+
+    it('should edit a single picture', function(done){
+        agent
+            .put(`/pics/${newPic._id}`)
+            .set("content-type", "application/x-www-form-urlencoded")
+            .send({name: 'Testing Space Edited'})
+            .end(function(err, res){
+                if (err){
+                    done(err)
+                }
+                editedPic = res.body[0]
+                
+                expect(res.status).to.be.equal(200)
+                expect(editedPic.name).to.be.equal(editedPicture.name)
+                expect(editedPic.url).to.be.equal(editedPicture.url)
+                expect(editedPic.created_by).to.be.equal(user.username)
                 done()
             })
     })
@@ -73,7 +119,7 @@ describe('Testing API routes', function(){
                 if (err){
                     done(err)
                 }
-                console.log('Deleted picture')
+                expect(res.status).to.be.equal(200)
                 done()
             })
     })
@@ -85,7 +131,6 @@ describe('Testing API routes', function(){
                 if (err) {
                     console.log(err)
                 }
-                console.log('Logged out')
             })
         User.findOneAndDelete({username: user.username}, (err, user) => {
             if (err) {

@@ -21,7 +21,6 @@ module.exports = app => {
 
     app.post('/pics/new', (req, res) => {
         if (req.user) {
-            console.log(req.user)
             const { name, url } = req.body
             const created_by = req.user.username
             const picture = new SpacePic({name, url, created_by})
@@ -40,17 +39,21 @@ module.exports = app => {
 
     app.put('/pics/:id', (req, res) => {
         if (req.user){
-            const picture = SpacePic.find({_id: req.params.id})
-            if (req.user.username == picture.created_by){
-                SpacePic.findOneAndUpdate({_id: req.params.id}, {name: req.body.name})
-                    .then(pic => {
-                        res.redirect(`/pics/${req.params.id}`)
-                    }).catch(err => {
-                        console.error(err)
-                    })
-            } else {
-                res.status(401).send({message: 'You do not have permission to do that'})
-            }
+            SpacePic.find({_id: req.params.id})
+                .then(picture => {
+                    if (req.user.username == picture[0].created_by){
+                        SpacePic.findOneAndUpdate({_id: req.params.id}, {name: req.body.name})
+                            .then(pic => {
+                                res.redirect(`/pics/${req.params.id}`)
+                            }).catch(err => {
+                                console.error(err)
+                            })
+                    } else {
+                        res.status(401).send({message: 'You do not have permission to do that'})
+                    }
+                }).catch(err => {
+                    console.error(err)
+                })
         } else {
             res.status(401).send({message: 'You must be logged in to do that'})
         }
